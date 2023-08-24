@@ -9,16 +9,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.filters import RecipeFilter, RecipeFilter
+from api.filters import RecipeFilter  # RecipeFilter
 from api.permissions import IsAuthorOrReadOnly
-from api.pagination import PageLimitNumberPagination
+# from api.pagination import PageLimitNumberPagination
 from api.render import TXTShoppingCartRenderer
 from api.serializers import (CustomUserCreateSerializer, CustomUserSerializer,
                              DownloadSCSerializer, IngredientSerializer,
                              RecipeCreateSerializer, RecipeShortSerializer,
                              RecipeRepresentationSerializer, TagSerializer,
                              UserSubscriptionSerializer)
-from recipes.models import (Ingredient, Favorite,  Recipe,
+from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, ShoppingCart, Tag)
 from users.models import Subscription
 
@@ -63,7 +63,7 @@ class RecipeViewSet(ModelViewSet):
             _, created = Favorite.objects.get_or_create(
                 recipe=recipe,
                 user=request.user
-                )
+            )
             if not created:
                 return Response({"errors": "Рецепт уже в избранных."},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -85,7 +85,7 @@ class RecipeViewSet(ModelViewSet):
             _, created = ShoppingCart.objects.get_or_create(
                 recipe=recipe,
                 user=request.user
-                )
+            )
             if not created:
                 return Response({"errors": "Рецепт уже в списке."},
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -143,7 +143,7 @@ class CustomUserViewSet(UserViewSet):
             _, created = Subscription.objects.get_or_create(
                 author=author,
                 subscriber=request.user
-                )
+            )
             if not created:
                 return Response({"errors": "Повторная подписка отклонена."},
                                 status=status.HTTP_400_BAD_REQUEST)

@@ -9,7 +9,11 @@ from foodgram.settings import BASE_DIR
 class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
-        with open(BASE_DIR/'../data/ingredients.csv', 'r', encoding='UTF-8') as file:
+        with open(
+            BASE_DIR/'../data/ingredients.csv',
+            'r',
+            encoding='UTF-8'
+        ) as file:
             reader = DictReader(file)
             ingredients = []
             for row in reader:

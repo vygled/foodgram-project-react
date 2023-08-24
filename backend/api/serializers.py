@@ -174,11 +174,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         )
 
     def update_recipeingredient(self, recipe, ingredients):
-        recipeingredient_list = [RecipeIngredient(
-            recipe=recipe,
-            ingredient=ingredient.get('ingredient'),
-            amount=ingredient.get('amount')
-            ) for ingredient in ingredients]
+        recipeingredient_list = [
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient=ingredient.get('ingredient'),
+                amount=ingredient.get('amount')
+            ) for ingredient in ingredients
+        ]
         if recipeingredient_list:
             RecipeIngredient.objects.bulk_create(recipeingredient_list)
 
