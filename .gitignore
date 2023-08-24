@@ -60,6 +60,7 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+backend/db.sqlite3
 
 # Flask stuff:
 instance/
@@ -109,6 +110,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+backend/venv/
 
 # Spyder project settings
 .spyderproject
@@ -130,3 +132,7 @@ dmypy.json
 
 # .idea
 .idea
+
+backend/media/
+backend/recipes/migrations/
+backend/users/migrations/
