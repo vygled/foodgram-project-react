@@ -9,15 +9,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.filters import RecipeFilter  # RecipeFilter
+from api.filters import RecipeFilter, IngredientFilter
 from api.permissions import IsAuthorOrReadOnly
-# from api.pagination import PageLimitNumberPagination
+from api.pagination import PageLimitNumberPagination
 from api.render import TXTShoppingCartRenderer
 from api.serializers import (CustomUserCreateSerializer, CustomUserSerializer,
                              DownloadSCSerializer, IngredientSerializer,
-                             RecipeCreateSerializer, RecipeShortSerializer,
-                             RecipeRepresentationSerializer, TagSerializer,
-                             UserSubscriptionSerializer)
+                             RecipeCreateSerializer,
+                             RecipeRepresentationSerializer,
+                             RecipeShortSerializer, SubscriptionSerializer,
+                             TagSerializer, UserSubscriptionSerializer)
 from recipes.models import (Ingredient, Favorite, Recipe,
                             RecipeIngredient, ShoppingCart, Tag)
 from users.models import Subscription
@@ -37,7 +38,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 class RecipeViewSet(ModelViewSet):
     """Функция представления рецептов."""
 
-    permission_classes = (IsAuthorOrReadOnly, )
+    permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
@@ -45,12 +46,17 @@ class RecipeViewSet(ModelViewSet):
         recipes = Recipe.objects.prefetch_related(
             'ingredients_in_recipe__ingredient',
             'tags'
-        ).all()
+        )
         return recipes
 
     def get_serializer_class(self):
-        if self.action == 'create' or 'update':
+        print(self.action)
+        if self.action == 'create' or 'partial_update':
+            print(12)
+            print(self.action)
+
             return RecipeCreateSerializer
+        print(23)
         return RecipeRepresentationSerializer
 
     def perform_create(self, serializer):
@@ -134,21 +140,18 @@ class CustomUserViewSet(UserViewSet):
         return CustomUserSerializer
 
     @action(methods=['post', 'delete'], detail=True,)
-    def subscribe(self, request, pk):
-        author = get_object_or_404(User, pk=pk)
+    def subscribe(self, request, id):
+        author = get_object_or_404(User, id=id)
         if request.method == 'POST':
-            if request.user == author:
-                return Response({"errors": "Подписка на себя отклонена."},
-                                status=status.HTTP_400_BAD_REQUEST)
-            _, created = Subscription.objects.get_or_create(
+            serializer = SubscriptionSerializer(
+                data={'subscriber': request.user.id,
+                      'author': author.id}
+            )
+            serializer.is_valid(raise_exception=True)
+            Subscription.objects.create(
                 author=author,
                 subscriber=request.user
             )
-            if not created:
-                return Response({"errors": "Повторная подписка отклонена."},
-                                status=status.HTTP_400_BAD_REQUEST)
-            serializer = UserSubscriptionSerializer(
-                author, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == 'DELETE':
@@ -177,7 +180,5 @@ class CustomUserViewSet(UserViewSet):
 class IngredietViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (permissions.AllowAny,)
     pagination_class = None
-    filterset_class = filters.SearchFilter
-    search_fields = ('^name',)
+    filterset_class = IngredientFilter

@@ -1,4 +1,4 @@
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -18,11 +18,13 @@ class Tag(models.Model):
     name = models.CharField(
         max_length=200,
         choices=TagChoeces.choices,
+        unique=True
     )
     color = models.CharField(max_length=7)
     slug = models.SlugField(
         max_length=200,
         unique=True,
+        db_index=True
     )
 
 
@@ -51,7 +53,10 @@ class Recipe(models.Model):
     )
     text = models.TextField(unique=True)
     cooking_time = models.PositiveSmallIntegerField(
-        validators=(MinValueValidator(1),)
+        validators=(
+            MaxValueValidator(600),
+            MinValueValidator(1)
+        )
     )
     pub_date = models.DateTimeField(auto_now_add=True)
 
@@ -70,6 +75,14 @@ class Ingredient(models.Model):
         max_length=200
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='name_measurement_unit_unique'
+            ),
+        ]
+
     def __str__(self):
         return self.name
 
@@ -85,7 +98,12 @@ class RecipeIngredient(models.Model):
         related_name='ingredients_in_recipe',
         on_delete=models.CASCADE
     )
-    amount = models.PositiveSmallIntegerField(default=0)
+    amount = models.PositiveSmallIntegerField(
+        validators=(
+            MaxValueValidator(999),
+            MinValueValidator(1)
+        )
+    )
 
 
 class Favorite(models.Model):
@@ -102,8 +120,10 @@ class Favorite(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=('user', 'recipe',),
-                                    name='unique_favorite')
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite'
+            )
         ]
 
 
@@ -121,6 +141,8 @@ class ShoppingCart(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=('user', 'recipe',),
-                                    name='unique_user_recipe_shop')
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_user_recipe_shop',
+            ),
         ]

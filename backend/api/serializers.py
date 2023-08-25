@@ -1,6 +1,9 @@
 from django.core.validators import RegexValidator
 from django.contrib.auth import get_user_model
-from djoser.serializers import UserSerializer, UserCreateSerializer
+from django.db import transaction
+from djoser.serializers import (UserSerializer, UserCreateSerializer,
+                                ValidationError)
+from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -77,14 +80,14 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        if not request:
+        if request.user.is_anonymous:
             return False
-        return Subscription.objects.filter(
-            author=obj,
-            subscriber=request.user).exists()
+        return Subscription.objects.filter(subscriber=request.user,
+                                           author=obj).exists()
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
+
     email = serializers.EmailField(
         max_length=254,
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -184,19 +187,19 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         if recipeingredient_list:
             RecipeIngredient.objects.bulk_create(recipeingredient_list)
 
+    @transaction.atomic
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         instance = super().create(validated_data)
         self.update_recipeingredient(instance, ingredients)
-
         return instance
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients')
         instance = super().update(instance, validated_data)
         RecipeIngredient.objects.filter(recipe=instance).delete()
         self.update_recipeingredient(instance, ingredients)
-
         return instance
 
     def to_representation(self, instance):
@@ -231,3 +234,20 @@ class UserSubscriptionSerializer(UserSerializer):
         if limit:
             recipes = recipes[:int(limit)]
         return RecipeShortSerializer(recipes, many=True).data
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Subscription
+        fields = ('__all__')
+
+    def validate(self, data):
+        if data['subscriber'] == data['author']:
+            return ValidationError("Подписка на себя отклонена.", code=400)
+        if Subscription.objects.filter(
+            author=data['author'],
+            subscriber=data['subscriber']
+        ).exists():
+            return ValidationError("Повторная подписка отклонена.", code=400)
+        return super().validate(data)
