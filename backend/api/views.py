@@ -4,14 +4,13 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from djoser.views import UserViewSet
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, status, filters
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from api.filters import RecipeFilter, IngredientFilter
 from api.permissions import IsAuthorOrReadOnly
-from api.pagination import PageLimitNumberPagination
 from api.render import TXTShoppingCartRenderer
 from api.serializers import (CustomUserCreateSerializer, CustomUserSerializer,
                              DownloadSCSerializer, IngredientSerializer,
